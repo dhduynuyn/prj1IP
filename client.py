@@ -36,6 +36,23 @@ def download_file(filename):
     print(f"[OK] Downloaded {filename} ({filesize} bytes)")
     sock.close()
 
+def list_dir_tree(base_path):
+    tree = {}
+    for entry in os.listdir(base_path):
+        full = os.path.join(base_path, entry)
+        if os.path.isdir(full):
+            tree[entry] = list_dir_tree(full)
+        else:
+            tree[entry] = None
+    return tree
+
+def handle_client(sock):
+    request = sock.recv(1024).decode()
+    if request == "TREE":
+        tree = list_dir_tree(SERVER_FOLDER)
+        sock.send(json.dumps(tree).encode())
+
+
 def main():
     os.makedirs(CLIENT_FOLDER, exist_ok=True)
 
