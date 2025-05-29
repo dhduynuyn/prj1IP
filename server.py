@@ -2,7 +2,6 @@ import socket
 import threading
 import json
 import os
-import time
 
 CHUNK_SIZE = 1024 * 1024
 SERVER_FOLDER = "Server"
@@ -48,7 +47,8 @@ def handle_command(conn, addr):
             if command == "LIST":
                 directory_tree = build_directory_tree(SERVER_FOLDER)
                 json_data = json.dumps(directory_tree)
-                conn.send(json_data.encode())
+                conn.sendall(json_data.encode())
+                conn.send("<END>".encode())  
 
             elif command.startswith("GET"):
                 _, filepath = command.split(maxsplit=1)
@@ -57,6 +57,8 @@ def handle_command(conn, addr):
 
             elif command == "QUIT" or not command:
                 break
+    except Exception as e:
+        print(f"[ERROR] {addr}: {e}")
     finally:
         conn.close()
         print(f"[CLOSE] {addr}")
