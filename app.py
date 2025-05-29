@@ -45,7 +45,7 @@ def fetch_directory_tree():
         dpg.delete_item("file_tree_panel", children_only=True)
         render_directory_tree(data, "file_tree_panel")
     except Exception as e:
-        log(f"❌ Failed to load tree: {e}")
+        log(f"Failed to load tree: {e}")
 
 # Download a file from the server and update the GUI with progress
 def download_file_ui(filename):
@@ -127,7 +127,7 @@ with dpg.theme() as theme_button_back:
         dpg.add_theme_color(dpg.mvThemeCol_Button, (0, 0, 0, 0))       
         dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 0)   
 
-with dpg.window(label="📦 File Downloader", width=main_window_width, height=main_window_height, tag="main_window"):
+with dpg.window(label="File Downloader", width=main_window_width, height=main_window_height, tag="main_window"):
     dpg.add_image(texture_id)
     
     down_button = dpg.add_image_button(texture_tag=downbtn, pos=(840,330), width=60, height=60, 
@@ -143,13 +143,13 @@ with dpg.window(label="📦 File Downloader", width=main_window_width, height=ma
 
     dpg.bind_item_theme(refresh_btn, theme_button_back)
     dpg.add_spacer(height=5)
-    dpg.add_child_window(tag="file_tree_panel", width=800, height=175, pos=(105,160), border=False)
+    dpg.add_child_window(tag="file_tree_panel", width=800, height=175, pos=(115,160), border=False)
     dpg.bind_item_theme("file_tree_panel", child_window_theme)
 
-    dpg.add_child_window(tag="download_window", width=800, height=125, pos=(105,410), border=False)
+    dpg.add_child_window(tag="download_window", width=800, height=125, pos=(115,415), border=False)
     dpg.bind_item_theme("download_window", child_window_theme)
 
-dpg.create_viewport(title="Socket File Downloader", width=1030, height=640)
+dpg.create_viewport(title="Socket File Downloader", width=1030, height=640, small_icon="./Element/icon-app.ico", large_icon="./Element/icon-app.ico")
 dpg.setup_dearpygui()
 dpg.show_viewport()
 
