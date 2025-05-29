@@ -1,9 +1,17 @@
 import threading
 import os
+import sys 
 import dearpygui.dearpygui as dpg
 from client import multithreaded_download, list_files, download_file
 
 selected_files = set()
+
+# get the correct path to resources (for PyInstaller and dev)
+def resource_path(relative_path):
+    """ Get absolute path to resource (works for dev and for PyInstaller) """
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
 # log error messages to the GUI
 def log(msg):
@@ -22,7 +30,7 @@ def render_directory_tree(tree, parent):
         name = item["name"]
         if item["type"] == "folder":
             with dpg.tree_node(label=f"{name}", parent=parent, default_open=False) as folder_node:
-                dpg.bind_item_font(folder_node, filename)
+                dpg.bind_item_font(folder_node, font_tag)
                 dpg.bind_item_theme(folder_node, tree_node_theme)
                 render_directory_tree(item["children"], folder_node)
         elif item["type"] == "file":
@@ -32,7 +40,7 @@ def render_directory_tree(tree, parent):
                 callback=toggle_file_checkbox,
                 user_data=item["path"]
             )
-            dpg.bind_item_font(checkbox_id, filename)
+            dpg.bind_item_font(checkbox_id, font_tag)
             dpg.bind_item_theme(checkbox_id, text_black_theme)
 
 # Fetch the directory tree from the server and render it in the GUI
@@ -56,7 +64,7 @@ def download_file_ui(filename):
         # add text, bind font and theme
         dpg.add_text(f"Downloading: {os.path.basename(filename)}", 
                      parent="download_window", tag=text_id)
-        dpg.bind_item_font(text_id, filename)
+        dpg.bind_item_font(text_id, font_tag)
         dpg.bind_item_theme(text_id, text_black_theme)
 
         # add progress bar
@@ -101,13 +109,12 @@ with dpg.theme() as text_black_theme:
         dpg.add_theme_color(dpg.mvThemeCol_Text, (0, 0, 0, 255)) 
 
 with dpg.texture_registry():
-    width, height, channels, data = dpg.load_image("Element/bg.png")
-    texture_id = dpg.add_static_texture(width, height, data)
-    width1, height1, channels1, data1 = dpg.load_image("Element/downbtn.png")
-    downbtn = dpg.add_static_texture(width1, height1, data1)
-    width2, height2, channels2, data2 = dpg.load_image("Element/refreshbtn.png")
-    refreshbtn = dpg.add_static_texture(width2, height2, data2)
-
+    width, height, channels, data = dpg.load_image(resource_path("Element/bg.png"))
+    bg_texture = dpg.add_static_texture(width, height, data)
+    width1, height1, channels1, data1 = dpg.load_image(resource_path("Element/downbtn.png"))
+    downbtn_texture = dpg.add_static_texture(width1, height1, data1)
+    width2, height2, channels2, data2 = dpg.load_image(resource_path("Element/refreshbtn.png"))
+    refreshbtn_texture = dpg.add_static_texture(width2, height2, data2)
 
 main_window_width = 1778
 main_window_height = 1000
@@ -119,8 +126,7 @@ with dpg.theme() as child_window_theme:
         dpg.add_theme_color(dpg.mvThemeCol_ScrollbarGrab, (150, 150, 200, 255))  
 
 with dpg.font_registry():
-    filename = dpg.add_font("Font/LithosPro-Black.otf",20)
-
+    font_tag = dpg.add_font(resource_path("Font/LithosPro-Black.otf"), 20)
 
 with dpg.theme() as theme_button_back:
     with dpg.theme_component(dpg.mvAll):
@@ -128,15 +134,15 @@ with dpg.theme() as theme_button_back:
         dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 0)   
 
 with dpg.window(label="📦 File Downloader", width=main_window_width, height=main_window_height, tag="main_window"):
-    dpg.add_image(texture_id)
+    dpg.add_image(bg_texture)
     
-    down_button = dpg.add_image_button(texture_tag=downbtn, pos=(840,330), width=60, height=60, 
+    down_button = dpg.add_image_button(texture_tag=downbtn_texture, pos=(840,330), width=60, height=60, 
                         frame_padding=0,
                         background_color=(0, 0, 0, 0),
                         callback=start_download)
     dpg.bind_item_theme(down_button, theme_button_back)
 
-    refresh_btn = dpg.add_image_button(texture_tag=refreshbtn, pos=(910,330), width=60, height=60, 
+    refresh_btn = dpg.add_image_button(texture_tag=refreshbtn_texture, pos=(910,330), width=60, height=60, 
                             frame_padding=0,
                             background_color=(0, 0, 0, 0),
                             callback=fetch_directory_tree)
