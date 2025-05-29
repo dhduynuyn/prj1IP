@@ -103,10 +103,14 @@ with dpg.theme() as tree_node_theme:
         dpg.add_theme_color(dpg.mvThemeCol_Text, (0, 0, 0, 255)) 
 
 with dpg.theme() as text_black_theme:
-    with dpg.theme_component(dpg.mvCheckbox): 
-        dpg.add_theme_color(dpg.mvThemeCol_Text, (0, 0, 0, 255)) 
+    with dpg.theme_component(dpg.mvCheckbox):
+        dpg.add_theme_color(dpg.mvThemeCol_Text, (0, 0, 0, 255))                      # Label text
+        dpg.add_theme_color(dpg.mvThemeCol_CheckMark, (255, 255, 255, 255))           # White check mark
+        dpg.add_theme_color(dpg.mvThemeCol_Border, (0, 0, 0, 255))                    # Black border
+        dpg.add_theme_style(dpg.mvStyleVar_FrameBorderSize, 1.5)                      # Border thickness
+
     with dpg.theme_component(dpg.mvText): 
-        dpg.add_theme_color(dpg.mvThemeCol_Text, (0, 0, 0, 255)) 
+        dpg.add_theme_color(dpg.mvThemeCol_Text, (0, 0, 0, 255))                      # Regular text
 
 with dpg.texture_registry():
     width, height, channels, data = dpg.load_image(resource_path("Element/bg.png"))
