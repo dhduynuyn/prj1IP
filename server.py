@@ -23,7 +23,6 @@ def build_directory_tree(path):
             tree.append({
                 "name": item,
                 "type": "file",
-                "size": os.path.getsize(full_path),
                 "path": full_path[len(SERVER_FOLDER) + 1:]
             })
     return tree
