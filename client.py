@@ -55,8 +55,10 @@ def download_file(filename, progress_callback=None):
 
         # print success message
         print(f"[OK] Downloaded {filename} ({filesize} bytes)")
+        return True, filepath
     except Exception as e:
         print(f"[EXCEPTION] {filename}: {e}")
+        return False, str(e)
     finally:
         sock.close()
     
