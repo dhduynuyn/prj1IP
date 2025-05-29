@@ -10,11 +10,11 @@ SERVER_PORT = 12000
 SERVER = socket.gethostbyname(socket.gethostname())
 SERVER_ADDR = (SERVER, SERVER_PORT)
 
-def multithreaded_download(filenames):
+def multithreaded_download(filenames, progress_callback=None):
     threads = []
     # create thread for each file
     for filename in filenames:
-        t = threading.Thread(target=download_file, args=(filename,))
+        t = threading.Thread(target=download_file, args=(filename,progress_callback))
         t.start()
         threads.append(t)
 
@@ -22,7 +22,7 @@ def multithreaded_download(filenames):
     for t in threads:
         t.join()
 
-def download_file(filename):
+def download_file(filename, progress_callback=None):
     try:
         # connect server and send GET request
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -50,6 +50,8 @@ def download_file(filename):
                     break
                 f.write(chunk)
                 received += len(chunk)
+                if progress_callback:
+                    progress_callback(received / filesize)
 
         # print success message
         print(f"[OK] Downloaded {filename} ({filesize} bytes)")
@@ -98,4 +100,5 @@ def main():
             print("Disconnected.")
             break
 
-main()
+if __name__ == "__main__":
+    main()

@@ -1,24 +1,22 @@
-import socket
 import threading
-import json
 import os
 import dearpygui.dearpygui as dpg
-
-SERVER_ADDR = (socket.gethostbyname(socket.gethostname()), 12000)
-CLIENT_FOLDER = "Client"
-CHUNK_SIZE = 1024 * 1024
+from client import multithreaded_download, list_files, download_file
 
 selected_files = set()
 
+# log error messages to the GUI
 def log(msg):
     dpg.add_text(msg, parent="download_window")
 
+# Toggle checkbox state and update selected files
 def toggle_file_checkbox(sender, app_data, user_data):
     if app_data:
         selected_files.add(user_data)
     else:
         selected_files.discard(user_data)
 
+# Render the directory tree recursively
 def render_directory_tree(tree, parent):
     for item in tree:
         name = item["name"]
@@ -37,83 +35,57 @@ def render_directory_tree(tree, parent):
             dpg.bind_item_font(checkbox_id, filename)
             dpg.bind_item_theme(checkbox_id, text_black_theme)
 
-
-
+# Fetch the directory tree from the server and render it in the GUI
 def fetch_directory_tree():
     try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect(SERVER_ADDR)
-        sock.send("LIST".encode())
+        # call backend to get the directory structure from the server
+        data = list_files()
 
-        data = sock.recv(8192).decode()
-        tree = json.loads(data)
-        sock.close()
-
+        # display the directory structure in the GUI
         dpg.delete_item("file_tree_panel", children_only=True)
-        render_directory_tree(tree, "file_tree_panel")
+        render_directory_tree(data, "file_tree_panel")
     except Exception as e:
         log(f"❌ Failed to load tree: {e}")
 
-
-def download_file(filename):
+# Download a file from the server and update the GUI with progress
+def download_file_ui(filename):
     try:
         progress_id = dpg.generate_uuid()
         text_id = dpg.generate_uuid()
 
-        # Thêm text trước, rồi bind font và theme NGAY SAU khi thêm
+        # add text, bind font and theme
         dpg.add_text(f"Downloading: {os.path.basename(filename)}", 
                      parent="download_window", tag=text_id)
-
-        # Áp dụng font và theme sau khi item đã tồn tại
         dpg.bind_item_font(text_id, filename)
         dpg.bind_item_theme(text_id, text_black_theme)
 
-        # Thêm progress bar bên dưới
+        # add progress bar
         dpg.add_progress_bar(tag=progress_id, parent="download_window", width=700, overlay="0%")
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect(SERVER_ADDR)
-        sock.send(f"GET {filename}".encode())
+        # update progress function
+        # called by the backend function to update the progress bar
+        def update_progress(p):
+            dpg.set_value(progress_id, p)
+            dpg.configure_item(progress_id, overlay=f"{int(p * 100)}%")
 
-        response = sock.recv(1024).decode()
-        if response.startswith("ERROR"):
-            log(f"❌ {filename}: {response}")
-            sock.close()
-            return
+        # call backend to download
+        success, result = download_file(filename, progress_callback=update_progress)
 
-        filesize = int(response)
-        full_path = os.path.join(CLIENT_FOLDER, filename)
-        os.makedirs(os.path.dirname(full_path), exist_ok=True)
-
-        received = 0
-        with open(full_path, "wb") as f:
-            while received < filesize:
-                chunk = sock.recv(CHUNK_SIZE)
-                if not chunk:
-                    break
-                f.write(chunk)
-                received += len(chunk)
-
-                # Cập nhật progress bar
-                progress = received / filesize
-                dpg.set_value(progress_id, progress)
-                dpg.configure_item(progress_id, overlay=f"{int(progress*100)}%")
-
-        sock.close()
-
-        # Cập nhật text thành "Downloaded"
-        dpg.set_value(text_id, f"Downloaded: {os.path.basename(filename)}")
+        if success:
+            dpg.set_value(text_id, f"Downloaded: {os.path.basename(filename)}")
+        else:
+            log(f"❌ {filename}: {result}")
 
     except Exception as e:
         log(f"❌ {filename}: {e}")
 
+# Start the download process for selected files
 def start_download():
     if not selected_files:
         log("⚠ No file selected.")
         return
-    os.makedirs(CLIENT_FOLDER, exist_ok=True)
     for file_path in selected_files:
-        threading.Thread(target=download_file, args=(file_path,), daemon=True).start()
+        threading.Thread(target=download_file_ui, args=(file_path,), daemon=True).start()
 
 # GUI setup
 dpg.create_context()
@@ -180,5 +152,9 @@ with dpg.window(label="📦 File Downloader", width=main_window_width, height=ma
 dpg.create_viewport(title="Socket File Downloader", width=1030, height=640)
 dpg.setup_dearpygui()
 dpg.show_viewport()
+
+# Fetch the initial directory tree
+fetch_directory_tree()
+
 dpg.start_dearpygui()
 dpg.destroy_context()
