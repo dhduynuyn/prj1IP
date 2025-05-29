@@ -38,7 +38,7 @@ def download_file(filename, progress_callback=None):
 
         # create file
         filesize = int(response)
-        filepath = os.path.join(CLIENT_FOLDER, filename)
+        filepath = os.path.join(CLIENT_FOLDER, os.path.basename(filename))
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
         # download file
